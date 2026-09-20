@@ -2,10 +2,19 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LoopWalk.Api.Contracts;
 
-/// <param name="Seed">Optional. The same seed and inputs reproduce the same route.</param>
-public sealed record GenerateRouteRequest(
-    [property: Range(-90, 90)] double StartLat,
-    [property: Range(-180, 180)] double StartLon,
-    [property: Range(500, 42_000)] double DistanceMeters,
-    [property: Range(2, 8)] int WaypointCount = 3,
-    int? Seed = null);
+public sealed class GenerateRouteRequest
+{
+    [Range(-90, 90)]
+    public double StartLat { get; init; }
+
+    [Range(-180, 180)]
+    public double StartLon { get; init; }
+
+    [Range(500, 42_000)]
+    public double DistanceMeters { get; init; }
+
+    [Range(2, 8)]
+    public int WaypointCount { get; init; } = 3;
+
+    public int? Seed { get; init; }
+}
