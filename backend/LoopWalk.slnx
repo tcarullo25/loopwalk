@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LoopWalk.Api/LoopWalk.Api.csproj" />
+    <Project Path="src/LoopWalk.Core/LoopWalk.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LoopWalk.Tests/LoopWalk.Tests.csproj" />
+  </Folder>
+</Solution>

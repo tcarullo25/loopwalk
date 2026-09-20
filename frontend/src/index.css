@@ -1,0 +1,129 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   LoopWalk design tokens.
+   Soft, sunny, low-contrast. Nothing in here should feel like a sports watch.
+--------------------------------------------------------------------------- */
+@theme {
+  --font-sans: 'Nunito', ui-rounded, 'Segoe UI', system-ui, sans-serif;
+
+  /* Paper — the app never sits on pure white */
+  --color-cream-50: #fdfdfb;
+  --color-cream-100: #fafaf7;
+  --color-cream-200: #f2f1ea;
+
+  /* Sage / mint — primary. The path colour and the primary button. */
+  --color-sage-50: #f1f9f4;
+  --color-sage-100: #dcf0e5;
+  --color-sage-200: #bce2cd;
+  --color-sage-300: #93cfae;
+  --color-sage-400: #6bb78f;
+  --color-sage-500: #4e9e75;
+  --color-sage-600: #3c7f5d;
+  --color-sage-700: #2f6449;
+
+  /* Peach — warm secondary, used for the "you are here" pin and accents */
+  --color-peach-100: #ffe8dc;
+  --color-peach-200: #ffd6c2;
+  --color-peach-300: #ffc3a0;
+  --color-peach-400: #ff9e75;
+  --color-peach-500: #f97f52;
+
+  /* Sky — tertiary, quiet informational bits */
+  --color-sky-100: #e4f1fa;
+  --color-sky-200: #c6e3f4;
+  --color-sky-300: #a8d8f0;
+  --color-sky-500: #5bafdb;
+
+  /* Ink — warm greys, never #000 */
+  --color-ink-400: #9a9489;
+  --color-ink-500: #7b756b;
+  --color-ink-600: #5a554d;
+  --color-ink-800: #33302b;
+
+  /* Soft, diffused elevation */
+  --shadow-soft: 0 2px 8px -2px rgb(51 48 43 / 0.06), 0 8px 24px -8px rgb(51 48 43 / 0.1);
+  --shadow-lift: 0 4px 12px -2px rgb(51 48 43 / 0.08), 0 16px 40px -12px rgb(51 48 43 / 0.16);
+  --shadow-sage: 0 6px 16px -4px rgb(62 127 93 / 0.4);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-cream-100 text-ink-800 font-sans antialiased;
+    /* The panel is a bottom sheet on mobile; never bounce the page behind it. */
+    overscroll-behavior: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Chunky range slider. Tailwind can't reach ::-webkit-slider-thumb, so the
+   distance slider's guts live here.
+--------------------------------------------------------------------------- */
+@layer components {
+  .lw-slider {
+    @apply h-11 w-full cursor-grab appearance-none bg-transparent;
+  }
+  .lw-slider:active {
+    @apply cursor-grabbing;
+  }
+
+  .lw-slider::-webkit-slider-runnable-track {
+    @apply h-3 rounded-full;
+    background: linear-gradient(
+      to right,
+      var(--color-sage-400) 0%,
+      var(--color-sage-400) var(--lw-fill, 50%),
+      var(--color-cream-200) var(--lw-fill, 50%),
+      var(--color-cream-200) 100%
+    );
+  }
+  .lw-slider::-moz-range-track {
+    @apply h-3 rounded-full bg-cream-200;
+  }
+  .lw-slider::-moz-range-progress {
+    @apply h-3 rounded-full bg-sage-400;
+  }
+
+  .lw-slider::-webkit-slider-thumb {
+    @apply size-8 appearance-none rounded-full border-4 border-white bg-sage-500;
+    box-shadow: var(--shadow-sage);
+    margin-top: calc((0.75rem - 2rem) / 2);
+    transition: transform 150ms ease;
+  }
+  .lw-slider::-moz-range-thumb {
+    @apply size-8 rounded-full border-4 border-white bg-sage-500;
+    box-shadow: var(--shadow-sage);
+    transition: transform 150ms ease;
+  }
+
+  .lw-slider:hover::-webkit-slider-thumb,
+  .lw-slider:active::-webkit-slider-thumb {
+    transform: scale(1.12);
+  }
+  .lw-slider:hover::-moz-range-thumb,
+  .lw-slider:active::-moz-range-thumb {
+    transform: scale(1.12);
+  }
+
+  .lw-slider:focus-visible::-webkit-slider-thumb {
+    @apply outline-2 outline-offset-4 outline-sage-500;
+  }
+  .lw-slider:focus-visible::-moz-range-thumb {
+    @apply outline-2 outline-offset-4 outline-sage-500;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
