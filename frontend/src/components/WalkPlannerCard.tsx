@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react'
+import { Route, TriangleAlert } from 'lucide-react'
 import AppHeader from './AppHeader'
 import DistanceSlider from './DistanceSlider'
 import LocationInput from './LocationInput'
@@ -13,6 +13,7 @@ type WalkPlannerCardProps = {
   onMilesChange: (miles: number) => void
   onGenerate: () => void
   generating?: boolean
+  error?: string | null
 }
 
 export default function WalkPlannerCard({
@@ -24,6 +25,7 @@ export default function WalkPlannerCard({
   onMilesChange,
   onGenerate,
   generating = false,
+  error = null,
 }: WalkPlannerCardProps) {
   const canGenerate = location.trim().length > 0 && !generating
 
@@ -40,13 +42,27 @@ export default function WalkPlannerCard({
 
       <DistanceSlider miles={miles} onChange={onMilesChange} />
 
+      {error && (
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-2xl bg-peach-100 px-4 py-3 text-sm font-semibold text-ink-600"
+        >
+          <TriangleAlert
+            className="mt-0.5 size-4 shrink-0 text-peach-500"
+            strokeWidth={2.5}
+            aria-hidden
+          />
+          <p>{error}</p>
+        </div>
+      )}
+
       <div className="space-y-2.5">
         <PrimaryButton
           onClick={onGenerate}
           disabled={!canGenerate}
           icon={
-            <Sparkles
-              className="size-5 transition-transform duration-300 group-hover:rotate-12"
+            <Route
+              className="size-5 transition-transform duration-300 group-hover:-translate-x-0.5"
               strokeWidth={2.5}
               aria-hidden
             />
