@@ -1,12 +1,14 @@
-import { Sparkles } from 'lucide-react'
+import { Navigation } from 'lucide-react'
 import AppHeader from './AppHeader'
 import DistanceSlider from './DistanceSlider'
 import LocationInput from './LocationInput'
 import PrimaryButton from './PrimaryButton'
+import type { GeocodeSuggestion } from '../lib/route'
 
 type WalkPlannerCardProps = {
   location: string
   onLocationChange: (value: string) => void
+  onSelectPlace: (place: GeocodeSuggestion) => void
   onUseCurrentLocation: () => void
   locating?: boolean
   miles: number
@@ -18,6 +20,7 @@ type WalkPlannerCardProps = {
 export default function WalkPlannerCard({
   location,
   onLocationChange,
+  onSelectPlace,
   onUseCurrentLocation,
   locating,
   miles,
@@ -34,6 +37,7 @@ export default function WalkPlannerCard({
       <LocationInput
         value={location}
         onChange={onLocationChange}
+        onSelectPlace={onSelectPlace}
         onUseCurrentLocation={onUseCurrentLocation}
         locating={locating}
       />
@@ -45,7 +49,7 @@ export default function WalkPlannerCard({
           onClick={onGenerate}
           disabled={!canGenerate}
           icon={
-            <Sparkles
+            <Navigation
               className="size-5 transition-transform duration-300 group-hover:rotate-12"
               strokeWidth={2.5}
               aria-hidden

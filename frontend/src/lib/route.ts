@@ -6,6 +6,16 @@ export type LineStringFeature = {
 
 export type Waypoint = { lat: number; lon: number }
 
+/** Washington Square Park, NYC — the map's default view and the geocoder's fallback bias. */
+export const DEFAULT_START: Waypoint = { lat: 40.7308, lon: -73.9973 }
+
+export type GeocodeSuggestion = {
+  id: string
+  placeName: string
+  lat: number
+  lon: number
+}
+
 export type RouteResult = {
   geoJson: LineStringFeature
   requestedDistanceMeters: number
@@ -48,4 +58,43 @@ export async function generateRoute(
   }
 
   return response.json()
+}
+
+type MapboxGeocodeFeature = {
+  id: string
+  place_name: string
+  center: [number, number]
+}
+
+/**
+ * Forward geocoding via Mapbox — resolves free-text addresses to coordinates.
+ * `proximity` biases results toward a location (the map's current center by default);
+ * without it Mapbox ranks purely on text relevance, which can return a same-named place
+ * on the other side of the world.
+ */
+export async function geocodeAddress(
+  query: string,
+  limit = 5,
+  proximity: Waypoint = DEFAULT_START,
+): Promise<GeocodeSuggestion[]> {
+  const token = import.meta.env.VITE_MAPBOX_TOKEN
+  const trimmed = query.trim()
+  if (!token || !trimmed) return []
+
+  const url = new URL(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(trimmed)}.json`)
+  url.searchParams.set('access_token', token)
+  url.searchParams.set('autocomplete', 'true')
+  url.searchParams.set('limit', String(limit))
+  url.searchParams.set('proximity', `${proximity.lon},${proximity.lat}`)
+
+  const response = await fetch(url.toString())
+  if (!response.ok) return []
+
+  const data: { features?: MapboxGeocodeFeature[] } = await response.json()
+  return (data.features ?? []).map((feature) => ({
+    id: feature.id,
+    placeName: feature.place_name,
+    lat: feature.center[1],
+    lon: feature.center[0],
+  }))
 }

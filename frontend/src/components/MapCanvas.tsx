@@ -2,24 +2,30 @@ import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import type { RouteResult } from '../lib/route'
+import { DEFAULT_START, type RouteResult } from '../lib/route'
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN ?? ''
 
 const ROUTE_SOURCE_ID = 'loop-route'
 const ROUTE_LAYER_ID = 'loop-route-line'
-const DEFAULT_CENTER: [number, number] = [-73.9973, 40.7308] // Washington Square Park, NYC
+const DEFAULT_CENTER: [number, number] = [DEFAULT_START.lon, DEFAULT_START.lat]
+const START_MARKER_COLOR = '#f97f52' // --color-peach-500
+
+type StartPoint = { lat: number; lon: number }
 
 type MapCanvasProps = {
   /** Floating UI that sits on top of the map. */
   children?: ReactNode
   route?: RouteResult | null
+  /** The resolved start location — shown as a "you are here" pin. */
+  startPoint?: StartPoint | null
 }
 
 /** Full-bleed container hosting the Mapbox GL instance. Draws the returned loop when present. */
-export default function MapCanvas({ children, route }: MapCanvasProps) {
+export default function MapCanvas({ children, route, startPoint }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
+  const startMarkerRef = useRef<mapboxgl.Marker | null>(null)
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -70,6 +76,32 @@ export default function MapCanvas({ children, route }: MapCanvasProps) {
     if (map.isStyleLoaded()) applyRoute()
     else map.once('load', applyRoute)
   }, [route])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    if (!startPoint) {
+      startMarkerRef.current?.remove()
+      startMarkerRef.current = null
+      return
+    }
+
+    const lngLat: [number, number] = [startPoint.lon, startPoint.lat]
+
+    if (startMarkerRef.current) {
+      startMarkerRef.current.setLngLat(lngLat)
+    } else {
+      startMarkerRef.current = new mapboxgl.Marker({ color: START_MARKER_COLOR })
+        .setLngLat(lngLat)
+        .addTo(map)
+    }
+
+    // Once a route is drawn, fitBounds already frames the whole loop — don't fight it.
+    if (!route) {
+      map.flyTo({ center: lngLat, zoom: 15, duration: 800 })
+    }
+  }, [startPoint, route])
 
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-cream-200">
