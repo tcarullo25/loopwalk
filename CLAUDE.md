@@ -80,20 +80,33 @@ unreachable or returns no route (common for start points far from any walkable r
 ## Frontend notes
 
 - Map rendering is `mapbox-gl` (Mapbox GL JS). Draw the returned `geoJson` as a line layer.
-- The frontend needs its **own public Mapbox token** in `frontend/.env.local` as
-  `VITE_MAPBOX_TOKEN` — URL-restricted in the Mapbox dashboard. It cannot use the backend's
-  secret token, and the secret token must never reach the browser.
+- The frontend needs a **public Mapbox token** in `frontend/.env.local` as `VITE_MAPBOX_TOKEN`,
+  ideally URL-restricted in the Mapbox dashboard.
 - Backend dev server: `http://localhost:5266` (https on `7271`). Configure a Vite proxy for
   `/api` rather than hardcoding the origin.
 - Show the user the **actual** snapped distance, not the requested one.
 
 ## Secrets
 
-The backend Mapbox token lives in user-secrets, never in `appsettings.json`:
+The Mapbox free tier only issues one token — the default **public** (`pk.`) one — so this project
+uses that same token on both sides rather than a dedicated secret token:
 
 ```bash
-dotnet user-secrets set "Mapbox:AccessToken" "<token>" --project backend/src/LoopWalk.Api
+dotnet user-secrets set "Mapbox:AccessToken" "<your pk. token>" --project backend/src/LoopWalk.Api
 ```
+
+This is safe: a public token's scopes are already meant to be exposed in browser code, so using it
+server-side too grants the backend nothing sensitive. What it costs you is independent rotation —
+you can't revoke the backend's access without also breaking the map in the browser. If the Mapbox
+account ever moves off the free tier, switch the backend to a real secret token and keep it out of
+the frontend's `.env.local` entirely.
+
+Either way, the token never goes in `appsettings.json` — user-secrets locally, and a real secret
+store (not source control) in any deployed environment.
+
+If the shared public token is URL-restricted in the Mapbox dashboard, that restriction checks the
+browser's `Referer` header. Server-to-server calls from `MapboxDirectionsClient` don't send one, so
+they're unaffected by a restriction scoped to the frontend's origins.
 
 ## Commands
 
