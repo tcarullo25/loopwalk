@@ -1,37 +1,84 @@
+import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import type { RouteResult } from '../lib/route'
+
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN ?? ''
+
+const ROUTE_SOURCE_ID = 'loop-route'
+const ROUTE_LAYER_ID = 'loop-route-line'
+const DEFAULT_CENTER: [number, number] = [-73.9973, 40.7308] // Washington Square Park, NYC
 
 type MapCanvasProps = {
   /** Floating UI that sits on top of the map. */
   children?: ReactNode
+  route?: RouteResult | null
 }
 
-/**
- * Full-bleed container that will host the Mapbox GL instance.
- *
- * Right now it renders a placeholder so the layout and panel can be designed
- * against something map-shaped. The real `mapbox-gl` map mounts into the
- * inner div once we wire it up.
- */
-export default function MapCanvas({ children }: MapCanvasProps) {
+/** Full-bleed container hosting the Mapbox GL instance. Draws the returned loop when present. */
+export default function MapCanvas({ children, route }: MapCanvasProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<mapboxgl.Map | null>(null)
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return
+
+    const map = new mapboxgl.Map({
+      container: containerRef.current,
+      style: 'mapbox://styles/mapbox/outdoors-v12',
+      center: DEFAULT_CENTER,
+      zoom: 14,
+    })
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right')
+    mapRef.current = map
+
+    return () => {
+      map.remove()
+      mapRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !route) return
+
+    const applyRoute = () => {
+      const existingSource = map.getSource(ROUTE_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined
+
+      if (existingSource) {
+        existingSource.setData(route.geoJson)
+      } else {
+        map.addSource(ROUTE_SOURCE_ID, { type: 'geojson', data: route.geoJson })
+        map.addLayer({
+          id: ROUTE_LAYER_ID,
+          type: 'line',
+          source: ROUTE_SOURCE_ID,
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': '#3c7f5d', 'line-width': 5 },
+        })
+      }
+
+      const coordinates = route.geoJson.geometry.coordinates
+      const bounds = coordinates.reduce(
+        (acc, coord) => acc.extend(coord),
+        new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]),
+      )
+      map.fitBounds(bounds, { padding: 64, duration: 500 })
+    }
+
+    if (map.isStyleLoaded()) applyRoute()
+    else map.once('load', applyRoute)
+  }, [route])
+
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-cream-200">
-      {/* --- placeholder "map" ------------------------------------------- */}
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-sage-50"
-        style={{
-          backgroundImage: `
-            linear-gradient(to right, rgb(60 127 93 / 0.07) 1px, transparent 1px),
-            linear-gradient(to bottom, rgb(60 127 93 / 0.07) 1px, transparent 1px),
-            radial-gradient(circle at 25% 30%, rgb(147 207 174 / 0.35), transparent 45%),
-            radial-gradient(circle at 78% 68%, rgb(168 216 240 / 0.35), transparent 40%)
-          `,
-          backgroundSize: '48px 48px, 48px 48px, 100% 100%, 100% 100%',
-        }}
-      />
-      <p className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold tracking-wide text-sage-600/50 select-none">
-        map goes here
-      </p>
+      {/*
+        Inline position: mapbox-gl.css ships its own `.mapboxgl-map { position: relative }`
+        rule, which otherwise wins the cascade over the `absolute` utility class here and
+        collapses this container (and the map) to zero height.
+      */}
+      <div ref={containerRef} className="absolute inset-0" style={{ position: 'absolute' }} />
 
       {/* Soft scrim so the floating panel always has contrast under it. */}
       <div
